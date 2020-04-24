@@ -5,3 +5,4 @@ __*__
 dist
 build
 *.egg-info
+*.root

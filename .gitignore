@@ -1,0 +1,7 @@
+*.swp
+__*__
+*.txt
+*.pdf
+dist
+build
+*.egg-info

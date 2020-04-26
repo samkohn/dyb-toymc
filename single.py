@@ -2,10 +2,10 @@
 
 import math
 
-from toymc import EventType, Event
+import toymc
 
 
-class Single(EventType):
+class Single(toymc.EventType):
     """Single events occur uniformly at random."""
 
     def __init__(self, name, rate_Hz, site, detector, trigger_type):
@@ -27,7 +27,7 @@ class Single(EventType):
         return events
 
     def new_event(self, rng, timestamp):
-        event = Event(
+        event = toymc.Event(
             1,
             timestamp,
             self.detector,

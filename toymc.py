@@ -178,10 +178,11 @@ class EventType(ABC):
         """Generate a list of Event objects for the given duration."""
         return []
 
-    @abstractmethod
-    def new_event(self, rng, timestamp):
-        """Generate a new Event object with the given timestamp."""
-        return Event()
+    @staticmethod
+    def actual_event_count(rng, duration_s, rate_hz):
+        """Generate an actual event count given the rate and duration."""
+        expected_count = duration_s * rate_hz
+        return rng.poisson(expected_count)
 
 
 Event = namedtuple(

@@ -16,8 +16,7 @@ class Single(toymc.EventType):
         self.trigger_type = trigger_type
 
     def generate_events(self, rng, duration_s):
-        expected_number = self.rate_hz * duration_s
-        actual_number = rng.poisson(expected_number)
+        actual_number = self.actual_event_count(rng, duration_s, self.rate_hz)
         duration_ns = int(1e9) * duration_s
         events = []
         timestamps = rng.integers(0, duration_ns, size=actual_number)
@@ -27,6 +26,7 @@ class Single(toymc.EventType):
         return events
 
     def new_event(self, rng, timestamp):
+        """Generate a new Event object with the given timestamp."""
         event = toymc.Event(
             1,
             timestamp,

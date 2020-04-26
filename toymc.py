@@ -5,7 +5,6 @@ from operator import attrgetter
 from abc import ABC, abstractmethod
 from numpy.random import default_rng
 
-from ROOT import TFile, TTree  # pylint: disable=no-name-in-module
 import root_util as util
 
 
@@ -13,6 +12,8 @@ class ToyMC:
     """The Toy MC execution class."""
 
     def __init__(self, outfile, duration, seed=None):
+        from ROOT import TFile  # pylint: disable=no-name-in-module
+
         self.outfile = TFile(outfile, "RECREATE")
         self.event_types = []
         self.duration = duration
@@ -44,10 +45,12 @@ class MCOutput:
     """The ToyMC output data structure."""
 
     def __init__(self, container):
+        from ROOT import TTree  # pylint: disable=no-name-in-module
+
         self.container = container
         self.container.cd()
-        self.reco_ttree, self.reco_buf = self.prep_reco(self.container)
-        self.calib_ttree, self.calib_buf = self.prep_calib(self.container)
+        self.reco_ttree, self.reco_buf = self.prep_reco(TTree, self.container)
+        self.calib_ttree, self.calib_buf = self.prep_calib(TTree, self.container)
 
     def add(self, event):
         """Add the given event to the output data structure."""
@@ -78,7 +81,7 @@ class MCOutput:
         self.calib_ttree.Fill()
 
     @staticmethod
-    def prep_calib(host_file):
+    def prep_calib(TTree, host_file):
         """Create the "calib" (~CalibStats) TTree and fill buffer.
 
         Return a tuple of (calibStats, buffer) containing the TTree object and the
@@ -131,7 +134,7 @@ class MCOutput:
         return calib, buf
 
     @staticmethod
-    def prep_reco(host_file):
+    def prep_reco(TTree, host_file):
         """Create the "reco" (~AdSimple) TTree and fill buffer.
 
         Return a tuple of (adSimple, buffer) containing the TTree object and the

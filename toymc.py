@@ -227,12 +227,15 @@ def main(outfile, runtime, seed):
     """Run the ToyMC with the given configuration."""
     toymc = ToyMC(outfile, runtime, seed=seed)
     single = Single("Single event", 20, 1, 1)
+    correlated = Correlated("IBD", 1, 1, 0.17, 28000)
     toymc.add_event_type(single)
+    toymc.add_event_type(correlated)
     toymc.run()
 
 
 if __name__ == "__main__":
     from single import Single
+    from correlated import Correlated
 
     parser = argparse.ArgumentParser(description="Daya Bay Toy MC by Sam Kohn")
     parser.add_argument("outfile")

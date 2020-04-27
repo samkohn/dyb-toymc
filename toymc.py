@@ -226,7 +226,7 @@ Event = namedtuple(
 def main(outfile, runtime, seed):
     """Run the ToyMC with the given configuration."""
     toymc = ToyMC(outfile, runtime, seed=seed)
-    single = Single("Single event", 20, 1, 1, 0x10001100)
+    single = Single("Single event", 20, 1, 1)
     toymc.add_event_type(single)
     toymc.run()
 

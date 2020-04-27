@@ -8,12 +8,12 @@ import toymc
 class Single(toymc.EventType):
     """Single events occur uniformly at random."""
 
-    def __init__(self, name, rate_Hz, site, detector, trigger_type):
+    def __init__(self, name, rate_Hz, site, detector):
         super().__init__(name)
         self.rate_hz = rate_Hz
         self.site = site
         self.detector = detector
-        self.trigger_type = trigger_type
+        self.trigger_type = 0x10001100
 
     def generate_events(self, rng, duration_s):
         actual_number = self.actual_event_count(rng, duration_s, self.rate_hz)

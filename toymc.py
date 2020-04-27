@@ -11,13 +11,22 @@ import root_util as util
 class ToyMC:
     """The Toy MC execution class."""
 
-    def __init__(self, outfile, duration, seed=None):
+    def __init__(
+        self,
+        outfile,
+        duration,
+        reco_name="AdSimpleNL",
+        calib_name="CalibStates",
+        seed=None,
+    ):
         from ROOT import TFile  # pylint: disable=no-name-in-module
 
         self.outfile = TFile(outfile, "RECREATE")
         self.event_types = []
         self.duration = duration
         self.rng = default_rng(seed)
+        self.reco_name = reco_name
+        self.calib_name = calib_name
 
     def add_event_type(self, event_type):
         """Add the specified event type to the ToyMC."""
@@ -25,7 +34,9 @@ class ToyMC:
 
     def run(self):
         """Run the ToyMC and save the output."""
-        output = MCOutput(self.outfile)
+        output = MCOutput(
+            self.outfile, reco_name=self.reco_name, calib_name=self.calib_name
+        )
         events = []
         for event_type in self.event_types:
             new_events = event_type.generate_events(self.rng, self.duration)
@@ -44,13 +55,17 @@ class ToyMC:
 class MCOutput:
     """The ToyMC output data structure."""
 
-    def __init__(self, container):
+    def __init__(self, container, reco_name, calib_name):
         from ROOT import TTree  # pylint: disable=no-name-in-module
 
         self.container = container
         self.container.cd()
-        self.reco_ttree, self.reco_buf = self.prep_reco(TTree, self.container)
-        self.calib_ttree, self.calib_buf = self.prep_calib(TTree, self.container)
+        self.reco_ttree, self.reco_buf = self.prep_reco(
+            TTree, self.container, reco_name
+        )
+        self.calib_ttree, self.calib_buf = self.prep_calib(
+            TTree, self.container, calib_name
+        )
 
     def add(self, event):
         """Add the given event to the output data structure."""
@@ -81,7 +96,7 @@ class MCOutput:
         self.calib_ttree.Fill()
 
     @staticmethod
-    def prep_calib(TTree, host_file):
+    def prep_calib(TTree, host_file, name):
         """Create the "calib" (~CalibStats) TTree and fill buffer.
 
         Return a tuple of (calibStats, buffer) containing the TTree object and the
@@ -109,9 +124,8 @@ class MCOutput:
         if not bool(data_subdir):
             data_subdir = event_subdir.mkdir("Data")
         data_subdir.cd()
-        calib = TTree(
-            "CalibStats", "Tree at /Event/Data/CalibStats holding Data_CalibStats"
-        )
+        long_name = "Tree at /Event/Data/{name} holding Data_{name}".format(name=name)
+        calib = TTree(name, long_name)
         calib.Branch("triggerNumber", buf.triggerNumber, "triggerNumber/I")
         calib.Branch(
             "context.mTimeStamp.mSec",
@@ -134,7 +148,7 @@ class MCOutput:
         return calib, buf
 
     @staticmethod
-    def prep_reco(TTree, host_file):
+    def prep_reco(TTree, host_file, name):
         """Create the "reco" (~AdSimple) TTree and fill buffer.
 
         Return a tuple of (adSimple, buffer) containing the TTree object and the
@@ -157,7 +171,8 @@ class MCOutput:
         if not bool(rec_subdir):
             rec_subdir = event_subdir.mkdir("Rec")
         rec_subdir.cd()
-        reco = TTree("AdSimple", "Tree at /Event/Rec/AdSimple holding Rec_AdSimple")
+        long_name = "Tree at /Event/Rec/{name} holding Rec_{name}".format(name=name)
+        reco = TTree(name, long_name)
         reco.Branch("context.mSite", buf.site, "context.mSite/I")
         reco.Branch("triggerType", buf.triggerType, "triggerType/i")
         reco.Branch("energy", buf.energy, "energy/F")
@@ -210,7 +225,7 @@ Event = namedtuple(
 
 def main(outfile, runtime, seed):
     """Run the ToyMC with the given configuration."""
-    toymc = ToyMC(outfile, runtime, seed)
+    toymc = ToyMC(outfile, runtime, seed=seed)
     single = Single("Single event", 20, 1, 1, 0x10001100)
     toymc.add_event_type(single)
     toymc.run()

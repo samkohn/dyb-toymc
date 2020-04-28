@@ -15,6 +15,9 @@ class Correlated(toymc.EventType):
         self.detector = detector
         self.trigger_type = 0x10001100
         self.coincidence_ns = coincidence_ns
+        self.prompt_energy_spectrum = lambda rng: rng.uniform(0.7, 4)
+        self.delayed_energy_spectrum = lambda rng: rng.uniform(7, 9)
+        self.prompt_delayed_distance_mm = 50
 
     def generate_events(self, rng, duration_s):
         actual_number = self.actual_event_count(rng, duration_s, self.rate_hz)
@@ -28,7 +31,8 @@ class Correlated(toymc.EventType):
         for time_prompt, time_delayed in zip(times_prompt, times_delayed):
             prompt = self.new_prompt_event(rng, time_prompt)
             events.append(prompt)
-            delayed = self.new_delayed_event(rng, time_delayed)
+            prompt_position = (prompt.x, prompt.y, prompt.z)
+            delayed = self.new_delayed_event(rng, time_delayed, prompt_position)
             events.append(delayed)
         return events
 
@@ -44,7 +48,7 @@ class Correlated(toymc.EventType):
         )
         return event
 
-    def new_delayed_event(self, rng, timestamp):
+    def new_delayed_event(self, rng, timestamp, prompt_position):
         """Generate a new delayed Event object with the given timestamp."""
         event = toymc.Event(
             1,
@@ -52,20 +56,19 @@ class Correlated(toymc.EventType):
             self.detector,
             self.trigger_type,
             self.site,
-            *self.delayed_physical_quantities(rng),
+            *self.delayed_physical_quantities(rng, prompt_position),
         )
         return event
 
-    @staticmethod
-    def prompt_physical_quantities(rng):
+    def prompt_physical_quantities(self, rng):
         """Generate the physical quantities for a prompt event."""
         # pylint: disable=invalid-name
-        physical_energy = rng.uniform(0.7, 4)
-        physical_x = 50
-        physical_y = 50
-        while math.hypot(physical_x, physical_y) > 2:
-            physical_x, physical_y = rng.uniform(-2, 2, size=2)
-        physical_z = rng.uniform(-2, 2)
+        physical_energy = self.prompt_energy_spectrum(rng)
+        physical_x = 2000
+        physical_y = 2000
+        while math.hypot(physical_x, physical_y) > 2000:
+            physical_x, physical_y = rng.uniform(-2000, 2000, size=2)
+        physical_z = rng.uniform(-2000, 2000)
         pe_per_mev = 170
         charge = physical_energy * pe_per_mev
         nHit = 192
@@ -88,16 +91,18 @@ class Correlated(toymc.EventType):
             f2inch_maxQ,
         )
 
-    @staticmethod
-    def delayed_physical_quantities(rng):
+    def delayed_physical_quantities(self, rng, prompt_position):
         """Generate the physical quantities for a delayed event."""
         # pylint: disable=invalid-name
-        physical_energy = rng.uniform(7, 9)
-        physical_x = 50
-        physical_y = 50
-        while math.hypot(physical_x, physical_y) > 2:
-            physical_x, physical_y = rng.uniform(-2, 2, size=2)
-        physical_z = rng.uniform(-2, 2)
+        physical_energy = self.delayed_energy_spectrum(rng)
+        displacement = rng.exponential(self.prompt_delayed_distance_mm, size=3)
+        physical_x = prompt_position[0] + displacement[0]
+        physical_y = prompt_position[1] + displacement[1]
+        while math.hypot(physical_x, physical_y) > 2000:
+            displacement = rng.exponential(self.prompt_delayed_distance_mm, size=3)
+            physical_x = prompt_position[0] + displacement[0]
+            physical_y = prompt_position[1] + displacement[1]
+        physical_z = prompt_position[2] + displacement[2]
         pe_per_mev = 170
         charge = physical_energy * pe_per_mev
         nHit = 192

@@ -42,11 +42,11 @@ class Single(toymc.EventType):
         """Generate the physical quantities for a single event."""
         # pylint: disable=invalid-name
         physical_energy = rng.uniform(1, 3.5)
-        physical_x = 50
-        physical_y = 50
-        while math.hypot(physical_x, physical_y) > 2:
-            physical_x, physical_y = rng.uniform(-2, 2, size=2)
-        physical_z = rng.uniform(-2, 2)
+        physical_x = 2000
+        physical_y = 2000
+        while math.hypot(physical_x, physical_y) > 2000:
+            physical_x, physical_y = rng.uniform(-2000, 2000, size=2)
+        physical_z = rng.uniform(-2000, 2000)
         pe_per_mev = 170
         charge = physical_energy * pe_per_mev
         nHit = 192

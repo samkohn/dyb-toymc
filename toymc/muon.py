@@ -16,6 +16,9 @@ class Muon(toymc.EventType):
         self.prob_WP_and_shower = 0.0005
         self.WP_detector = 6
         self.trigger_type = 0x10001100
+        self.WP_nHit_spectrum = lambda rng: rng.integers(15, 100)
+        self.ADMuon_energy_spectrum = lambda rng: rng.uniform(20, 2000)
+        self.shower_energy_spectrum = lambda rng: rng.uniform(2500, 5000)
 
     def generate_events(self, rng, duration_s):
         actual_number = self.actual_event_count(rng, duration_s, self.rate_hz)
@@ -75,12 +78,10 @@ class Muon(toymc.EventType):
         )
         return event
 
-    @staticmethod
-    def WP_physical_quantities(rng):
+    def WP_physical_quantities(self, rng):
         """Generate the physical quantities for a WP event."""
-        # pylint: disable=invalid-name
         energy = 0
-        nHit = rng.integers(15, 100)
+        nHit = self.WP_nHit_spectrum(rng)
         charge = 0
         x = 0
         y = 0
@@ -104,11 +105,9 @@ class Muon(toymc.EventType):
             f2inch_maxQ,
         )
 
-    @staticmethod
-    def AD_muon_physical_quantities(rng):
+    def AD_muon_physical_quantities(self, rng):
         """Generate the physical quantities for an AD Muon event."""
-        # pylint: disable=invalid-name
-        physical_energy = rng.uniform(20, 2000)
+        physical_energy = self.ADMuon_energy_spectrum(rng)
         pe_per_mev = 170
         charge = physical_energy * pe_per_mev
         nHit = 192
@@ -134,11 +133,9 @@ class Muon(toymc.EventType):
             f2inch_maxQ,
         )
 
-    @staticmethod
-    def shower_muon_physical_quantities(rng):
+    def shower_muon_physical_quantities(self, rng):
         """Generate the physical quantities for a shower muon event."""
-        # pylint: disable=invalid-name
-        physical_energy = rng.uniform(2500, 5000)
+        physical_energy = self.shower_energy_spectrum(rng)
         pe_per_mev = 170
         charge = physical_energy * pe_per_mev
         nHit = 192

@@ -1,8 +1,7 @@
 """Define a simple correlated event type."""
 
-import math
-
 import toymc
+import toymc.util as util
 
 
 class Correlated(toymc.EventType):
@@ -18,6 +17,13 @@ class Correlated(toymc.EventType):
         self.prompt_energy_spectrum = lambda rng: rng.uniform(0.7, 4)
         self.delayed_energy_spectrum = lambda rng: rng.uniform(7, 9)
         self.prompt_delayed_distance_mm = 50
+        default_radius = 1500
+        self.prompt_position_spectrum_mm = util.rng_uniform_cylinder(
+            default_radius, 2 * default_radius
+        )
+        self.delayed_pos_from_prompt_mm = util.rng_correlated_expo_cylinder(
+            default_radius, 2 * default_radius, self.prompt_delayed_distance_mm
+        )
 
     def generate_events(self, rng, duration_s):
         actual_number = self.actual_event_count(rng, duration_s, self.rate_hz)
@@ -62,13 +68,8 @@ class Correlated(toymc.EventType):
 
     def prompt_physical_quantities(self, rng):
         """Generate the physical quantities for a prompt event."""
-        # pylint: disable=invalid-name
         physical_energy = self.prompt_energy_spectrum(rng)
-        physical_x = 2000
-        physical_y = 2000
-        while math.hypot(physical_x, physical_y) > 2000:
-            physical_x, physical_y = rng.uniform(-2000, 2000, size=2)
-        physical_z = rng.uniform(-2000, 2000)
+        physical_x, physical_y, physical_z = self.prompt_position_spectrum_mm(rng)
         pe_per_mev = 170
         charge = physical_energy * pe_per_mev
         nHit = 192
@@ -93,16 +94,10 @@ class Correlated(toymc.EventType):
 
     def delayed_physical_quantities(self, rng, prompt_position):
         """Generate the physical quantities for a delayed event."""
-        # pylint: disable=invalid-name
         physical_energy = self.delayed_energy_spectrum(rng)
-        displacement = rng.exponential(self.prompt_delayed_distance_mm, size=3)
-        physical_x = prompt_position[0] + displacement[0]
-        physical_y = prompt_position[1] + displacement[1]
-        while math.hypot(physical_x, physical_y) > 2000:
-            displacement = rng.exponential(self.prompt_delayed_distance_mm, size=3)
-            physical_x = prompt_position[0] + displacement[0]
-            physical_y = prompt_position[1] + displacement[1]
-        physical_z = prompt_position[2] + displacement[2]
+        physical_x, physical_y, physical_z = self.delayed_pos_from_prompt_mm(
+            rng, prompt_position
+        )
         pe_per_mev = 170
         charge = physical_energy * pe_per_mev
         nHit = 192

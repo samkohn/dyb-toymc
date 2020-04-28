@@ -1,8 +1,7 @@
 """Define single AD events."""
 
-import math
-
 import toymc
+import toymc.util as util
 
 
 class Single(toymc.EventType):
@@ -14,6 +13,11 @@ class Single(toymc.EventType):
         self.site = site
         self.detector = detector
         self.trigger_type = 0x10001100
+        self.energy_spectrum = lambda rng: rng.uniform(1, 3.5)
+        default_radius = 2000
+        self.position_spectrum_mm = util.rng_uniform_cylinder(
+            default_radius, 2 * default_radius
+        )
 
     def generate_events(self, rng, duration_s):
         actual_number = self.actual_event_count(rng, duration_s, self.rate_hz)
@@ -37,16 +41,10 @@ class Single(toymc.EventType):
         )
         return event
 
-    @staticmethod
-    def physical_quantities(rng):
+    def physical_quantities(self, rng):
         """Generate the physical quantities for a single event."""
-        # pylint: disable=invalid-name
         physical_energy = rng.uniform(1, 3.5)
-        physical_x = 2000
-        physical_y = 2000
-        while math.hypot(physical_x, physical_y) > 2000:
-            physical_x, physical_y = rng.uniform(-2000, 2000, size=2)
-        physical_z = rng.uniform(-2000, 2000)
+        physical_x, physical_y, physical_z = self.position_spectrum_mm(rng)
         pe_per_mev = 170
         charge = physical_energy * pe_per_mev
         nHit = 192

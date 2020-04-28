@@ -5,7 +5,7 @@ from operator import attrgetter
 from abc import ABC, abstractmethod
 from numpy.random import default_rng
 
-import root_util as util
+import root_util
 
 
 class ToyMC:
@@ -71,26 +71,27 @@ class MCOutput:
         """Add the given event to the output data structure."""
         rb = self.reco_buf
         cb = self.calib_buf
-        util.assign_value(cb.triggerNumber, event.trigger_number)
-        util.assign_value(cb.detector, event.detector)
+        assign_value = root_util.assign_value
+        assign_value(cb.triggerNumber, event.trigger_number)
+        assign_value(cb.detector, event.detector)
         timestamp_seconds = event.timestamp // 1000000000
         timestamp_nanoseconds = event.timestamp % 1000000000
-        util.assign_value(cb.timestamp_seconds, timestamp_seconds)
-        util.assign_value(cb.timestamp_nanoseconds, timestamp_nanoseconds)
-        util.assign_value(cb.nHit, event.nHit)
-        util.assign_value(cb.charge, event.charge)
-        util.assign_value(cb.fQuad, event.fQuad)
-        util.assign_value(cb.fMax, event.fMax)
-        util.assign_value(cb.fPSD_t1, event.fPSD_t1)
-        util.assign_value(cb.fPSD_t2, event.fPSD_t2)
-        util.assign_value(cb.f2inch_maxQ, event.f2inch_maxQ)
+        assign_value(cb.timestamp_seconds, timestamp_seconds)
+        assign_value(cb.timestamp_nanoseconds, timestamp_nanoseconds)
+        assign_value(cb.nHit, event.nHit)
+        assign_value(cb.charge, event.charge)
+        assign_value(cb.fQuad, event.fQuad)
+        assign_value(cb.fMax, event.fMax)
+        assign_value(cb.fPSD_t1, event.fPSD_t1)
+        assign_value(cb.fPSD_t2, event.fPSD_t2)
+        assign_value(cb.f2inch_maxQ, event.f2inch_maxQ)
 
-        util.assign_value(rb.triggerType, event.trigger_type)
-        util.assign_value(rb.site, event.site)
-        util.assign_value(rb.energy, event.energy)
-        util.assign_value(rb.x, event.x)
-        util.assign_value(rb.y, event.y)
-        util.assign_value(rb.z, event.z)
+        assign_value(rb.triggerType, event.trigger_type)
+        assign_value(rb.site, event.site)
+        assign_value(rb.energy, event.energy)
+        assign_value(rb.x, event.x)
+        assign_value(rb.y, event.y)
+        assign_value(rb.z, event.z)
 
         self.reco_ttree.Fill()
         self.calib_ttree.Fill()
@@ -102,18 +103,18 @@ class MCOutput:
         Return a tuple of (calibStats, buffer) containing the TTree object and the
         buffer used to fill its TBranches.
         """
-        buf = util.TreeBuffer()
-        buf.triggerNumber = util.int_value()
-        buf.detector = util.int_value()
-        buf.timestamp_seconds = util.int_value()
-        buf.timestamp_nanoseconds = util.int_value()
-        buf.nHit = util.int_value()
-        buf.charge = util.float_value()
-        buf.fQuad = util.float_value()
-        buf.fMax = util.float_value()
-        buf.fPSD_t1 = util.float_value()
-        buf.fPSD_t2 = util.float_value()
-        buf.f2inch_maxQ = util.float_value()
+        buf = root_util.TreeBuffer()
+        buf.triggerNumber = root_util.int_value()
+        buf.detector = root_util.int_value()
+        buf.timestamp_seconds = root_util.int_value()
+        buf.timestamp_nanoseconds = root_util.int_value()
+        buf.nHit = root_util.int_value()
+        buf.charge = root_util.float_value()
+        buf.fQuad = root_util.float_value()
+        buf.fMax = root_util.float_value()
+        buf.fPSD_t1 = root_util.float_value()
+        buf.fPSD_t2 = root_util.float_value()
+        buf.f2inch_maxQ = root_util.float_value()
 
         host_file.cd()
         event_subdir = host_file.Get("Event")
@@ -154,13 +155,13 @@ class MCOutput:
         Return a tuple of (adSimple, buffer) containing the TTree object and the
         buffer used to fill its TBranches.
         """
-        buf = util.TreeBuffer()
-        buf.triggerType = util.unsigned_int_value()
-        buf.site = util.int_value()
-        buf.energy = util.float_value()
-        buf.x = util.float_value()
-        buf.y = util.float_value()
-        buf.z = util.float_value()
+        buf = root_util.TreeBuffer()
+        buf.triggerType = root_util.unsigned_int_value()
+        buf.site = root_util.int_value()
+        buf.energy = root_util.float_value()
+        buf.x = root_util.float_value()
+        buf.y = root_util.float_value()
+        buf.z = root_util.float_value()
 
         host_file.cd()
         event_subdir = host_file.Get("Event")

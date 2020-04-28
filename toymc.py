@@ -16,7 +16,7 @@ class ToyMC:
         outfile,
         duration,
         reco_name="AdSimpleNL",
-        calib_name="CalibStates",
+        calib_name="CalibStats",
         seed=None,
     ):
         from ROOT import TFile  # pylint: disable=no-name-in-module

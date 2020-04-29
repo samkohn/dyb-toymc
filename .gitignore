@@ -6,3 +6,6 @@ dist
 build
 *.egg-info
 *.root
+Makefile
+_build
+*.bat

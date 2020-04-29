@@ -130,6 +130,7 @@ def rng_correlated_expo_cylinder(radius, height, exp_scale):
         supplied radius and height based on a correlation to the
         original point.
     """
+
     def correlated_expo_cylinder(rng, start_position):
         """Generate a new point correlated to the start position.
 
@@ -146,17 +147,22 @@ def rng_correlated_expo_cylinder(radius, height, exp_scale):
         position : (number, number, number)
             The x, y, and z coordinates of the new correlated position
         """
+
         def trial():
             displacement = rng.exponential(exp_scale, size=2)
             x = start_position[0] + displacement[0]
             y = start_position[1] + displacement[1]
             return (x, y)
+
         x, y = within_circle(radius, trial)
+
         def z_trial_trick():
             # To iterate on the z coordinate, just return (z, 0)
             displacement = rng.exponential(exp_scale)
             z = start_position[2] + displacement
             return (z, 0)
-        z, _ = within_circle(height/2, z_trial_trick)
+
+        z, _ = within_circle(height / 2, z_trial_trick)
         return (x, y, z)
+
     return correlated_expo_cylinder

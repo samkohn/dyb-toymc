@@ -157,6 +157,6 @@ def rng_correlated_expo_cylinder(radius, height, exp_scale):
             displacement = rng.exponential(exp_scale)
             z = start_position[2] + displacement
             return (z, 0)
-        z = within_circle(height/2, z_trial_trick)
+        z, _ = within_circle(height/2, z_trial_trick)
         return (x, y, z)
     return correlated_expo_cylinder

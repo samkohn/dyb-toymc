@@ -30,10 +30,9 @@ def main(outfile, runtime, seed):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description="Daya Bay Toy MC by Sam Kohn")
     parser.add_argument("outfile")
-    parser.add_argument("-t", "--runtime", type=int)
-    parser.add_argument("-s", "--seed", default=None, type=int)
+    parser.add_argument("-t", "--runtime", type=int, help="DAQ runtime in seconds")
+    parser.add_argument("-s", "--seed", default=None, type=int, help="random seed")
     args = parser.parse_args()
     main(args.outfile, args.runtime, args.seed)

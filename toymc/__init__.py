@@ -117,6 +117,26 @@ random, but it could be quite complicated, e.g. weighted by a histogram.
 The documentation for each built-in class specifies the available
 attributes that can be customized. A small number of helper methods are
 available in the :py:mod:`toymc.util` module.
+
+Creating new event types
+------------------------
+
+New event types are easily created by creating a subclass of
+:py:class:`toymc.EventType`. You should override ``__init__`` and
+``generate_events``. In the latter method, you should include whatever
+logic you need to generate your events. You will be provided with a
+random number generator (instance of numpy.random.Generator) as the
+first parameter. In the built-in event types, most of the logic is
+specified in sub-methods to help keep the code clean and readable.
+
+Each event you create (i.e. each element of the list returned by
+``generate_events`` must be an instance of :py:class:`toymc.Event`,
+which is a ``namedtuple`` class. When you construct these Event objects,
+you must provide all 16 attributes in the correct order. They are
+also immutable, so you cannot change values from an existing Event
+object. You shouldn't have to, though, if you follow the pattern for
+generating events from the built-in event types. See the :py:class:`API
+documentation for Event <toymc.Event>` for more details.
 """
 import argparse
 from collections import namedtuple

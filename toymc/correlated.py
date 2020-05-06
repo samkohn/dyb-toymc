@@ -7,6 +7,13 @@ sampled from an exponential distribution, and the delayed position is
 user-configurable, but defaults to an exponential distribution in terms
 of displacement from the prompt event.
 
+There are 2 ``MCTruthLookup`` labels for Correlated events: one for the
+prompt and one for the delayed:
+    - text labels: append ``"_prompt"`` and ``"_delayed"`` to the name
+      provided to this class in the constructor
+    - numeric lookup: the value of ``self.truth_label_prompt`` and
+      ``self.truth_label_delayed``, respectively
+
 The user-configurable options specified below include, as usual,
 :py:attr:`~Correlated.trigger_type` and then some interesting ones.
 
@@ -58,6 +65,12 @@ class Correlated(toymc.EventType):
 
     Attributes
     ----------
+    truth_label_prompt : positive integer
+        The code for the prompt event subtype in the MC Truth records.
+        Default: ``None``.
+    truth_label_delayed : positive integer
+        The code for the delayed event subtype in the MC Truth records.
+        Default: ``None``.
     trigger_type : number
         The value to use for the :py:attr:`toymc.Event.trigger_type` in
         Events created by this object. Default: ``0x10001100``.
@@ -96,6 +109,8 @@ class Correlated(toymc.EventType):
         self.delayed_pos_from_prompt_mm = util.rng_correlated_expo_cylinder(
             default_radius, 2 * default_radius, default_prompt_delayed_distance_mm
         )
+        self.truth_label_prompt = None
+        self.truth_label_delayed = None
 
     def generate_events(self, rng, duration_s):
         """Generate correlated events over the given duration.
@@ -119,6 +134,14 @@ class Correlated(toymc.EventType):
             events.append(delayed)
         return events
 
+    def labels(self):
+        """Return a labels dict mapping the lookup numbers to prompt and
+        delayed."""
+        return {
+            self.truth_label_prompt: "{}_prompt".format(self.name),
+            self.truth_label_delayed: "{}_delayed".format(self.name),
+        }
+
     def new_prompt_event(self, rng, timestamp):
         """Generate a new prompt Event object with the given timestamp.
 
@@ -130,6 +153,7 @@ class Correlated(toymc.EventType):
         :py:meth:`Correlated.prompt_physical_quantities`.
         """
         event = toymc.Event(
+            self.truth_label_prompt,
             1,
             timestamp,
             self.detector,
@@ -150,6 +174,7 @@ class Correlated(toymc.EventType):
         :py:meth:`Correlated.delayed_physical_quantities`.
         """
         event = toymc.Event(
+            self.truth_label_delayed,
             1,
             timestamp,
             self.detector,

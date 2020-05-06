@@ -5,6 +5,12 @@ position correlations to other events. This makes the ``Single`` a good
 event type to use to represent the uncorrelated singles in the Daya Bay
 ADs.
 
+There is only one event subtype attribute representing the label given
+to TTree entries produced by an instance of this class:
+    - text label: the name provided to this class in the constructor
+    - numeric lookup: the value of ``self.truth_label``, which you must
+      assign
+
 As specified in the API below, there are user-configurable options
 for this event type. The simplest, barely worth mentioning, is the
 :py:attr:`~Single.trigger_type` attribute, which you can use to change
@@ -50,6 +56,9 @@ class Single(toymc.EventType):
 
     Attributes
     ----------
+    truth_label : positive integer
+        The code for this event type in the MC Truth records. Default:
+        ``None``.
     trigger_type : number
         The value to use for the :py:attr:`toymc.Event.trigger_type` in
         Events created by this object. Default: ``0x10001100``.
@@ -72,6 +81,7 @@ class Single(toymc.EventType):
         self.position_spectrum_mm = util.rng_uniform_cylinder(
             default_radius, 2 * default_radius
         )
+        self.truth_label = None
 
     def generate_events(self, rng, duration_s):
         """Generate single uncorrelated events over the given duration.
@@ -88,6 +98,10 @@ class Single(toymc.EventType):
             events.append(event)
         return events
 
+    def labels(self):
+        """Return a labels dict whose sole value is ``self.name``."""
+        return {self.truth_label: self.name}
+
     def new_event(self, rng, timestamp):
         """Generate a new Event object with the given timestamp.
 
@@ -98,6 +112,7 @@ class Single(toymc.EventType):
         the complicated parts to :py:meth:`Single.physical_quantities`.
         """
         event = toymc.Event(
+            self.truth_label,
             1,
             timestamp,
             self.detector,

@@ -8,6 +8,16 @@ at the origin (center of the AD). Future versions may have a more
 sophisticated/realistic model of these hit correlations (e.g. including
 the IWS, or allowing for AD muons that don't have a correlated WP hit).
 
+There are 3 event subtype attributes for Muon objects that you must
+specify in order to use the MC Truth lookups. They're all based on the
+name given to the constructor.
+    - WP events: text label is ``self.name + "_WP"``, numeric lookup
+      is the value of ``self.truth_label_WP``
+    - AD muon events: text label is ``self.name + "_AD"``, numeric
+      lookup is the value of ``self.truth_label_AD``
+    - Shower muon events: text label is ``self.name + "_shower"``,
+      numeric lookup is the value of ``self.truth_label_shower``
+
 There are a much larger number of configurables for this event type due
 to the complexity of the situation being modeled. Of course there is
 still the trigger type.
@@ -49,6 +59,12 @@ class Muon(toymc.EventType):
 
     Attributes
     ----------
+    truth_label_WP : positive integer
+        The numeric value tagging WP events
+    truth_label_AD : positive integer
+        The numeric value tagging AD muon events
+    truth_label_shower : positive integer
+        The numeric value tagging shower muon events
     trigger_type : number
         The value to use for the :py:attr:`toymc.Event.trigger_type` in
         Events created by this object. Default: ``0x10001100``.
@@ -78,6 +94,9 @@ class Muon(toymc.EventType):
 
     def __init__(self, name, site, rate_Hz):
         super().__init__(name)
+        self.truth_label_WP = None
+        self.truth_label_AD = None
+        self.truth_label_shower = None
         self.rate_hz = rate_Hz
         self.site = site
         self.avail_ads = {1: (1, 2), 2: (1, 2), 4: (1, 2, 3, 4)}[site]
@@ -117,6 +136,15 @@ class Muon(toymc.EventType):
             events.append(shower_event)
         return events
 
+    def labels(self):
+        """Return a labels dict with the values noted in the class
+        docstring."""
+        return {
+            self.truth_label_WP: self.name + "_WP",
+            self.truth_label_AD: self.name + "_AD",
+            self.truth_label_shower: self.name + "_shower",
+        }
+
     def new_WP_event(self, rng, timestamp):
         """Generate a new WP Muon event with the given timestamp.
 
@@ -128,6 +156,7 @@ class Muon(toymc.EventType):
         :py:meth:`Muon.WP_physical_quantities`.
         """
         event = toymc.Event(
+            self.truth_label_WP,
             1,
             timestamp,
             self.WP_detector,
@@ -148,6 +177,7 @@ class Muon(toymc.EventType):
         :py:meth:`Muon.AD_muon_physical_quantities`.
         """
         event = toymc.Event(
+            self.truth_label_AD,
             1,
             timestamp,
             rng.choice(self.avail_ads),
@@ -168,6 +198,7 @@ class Muon(toymc.EventType):
         :py:meth:`Muon.shower_muon_physical_quantities`.
         """
         event = toymc.Event(
+            self.truth_label_shower,
             1,
             timestamp,
             rng.choice(self.avail_ads),

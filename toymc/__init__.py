@@ -65,6 +65,82 @@ execution.
 For a simple working example with all the different event types, see
 example.py in the dyb-toymc repository.
 
+Recording the true event types
+------------------------------
+
+The Toy MC saves the "true" event type for each event so that you can
+see if your analysis code correctly recognizes different types of
+events. The truth information corresponding to each output TTree entry
+is saved in its own TTree located at ``/MCTruth`` directly in the output
+file. A lookup table/legend is also saved to ``/MCTruthLookup``.
+
+For clarity, I will refer to the different Python classes that subclass
+:py:class:`EventType` as "event types," and to the different possible
+types of triggered readout events (e.g. prompt, delayed, WP muon, AD
+muon) as "event subtypes."
+
+Each event type can consist of multiple subtypes. For example, the
+:py:class:`~toymc.correlated.Correlated` event type has 2 subtypes:
+prompt and delayed. The event type class is responsible for enumerating
+its own event subtypes and providing a mechanism to assign lookup
+numbers to each of them. (Suggested mechanism is just the object
+attributes, e.g. ``my_event.first_subclass_label = 5``.) These lookup
+numbers will be filled into the corresponding entries in the ``MCTruth``
+output TTree as the truth record for each subevent. **As the user, you
+must assign a lookup number to every single subevent type present in all
+of the EventType objects you create.** This includes if you initialize
+multiple objects from a single EventType class --- each object needs to
+get its own unique lookup numbers. The Toy MC will *not* do this for
+you.
+
+I firmly believe that if you send someone a data file, they should be
+able to figure out what most of the data means just from the information
+within the file. (Maybe let's go easy on ourselves and limit the list of
+recipients to other Daya Bay analyzers.) Practically, what this means
+is that using arbitrary numbers to represent data types is insufficient
+without a lookup table. And as mentioned prevously, the Toy MC provides
+a lookup table in the form of a TTree saved to ``/MCTruthLookup``.
+
+The MCTruthLookup TTree contains a bi-directional lookup, both from
+textual labels to subtype numbers, and vice versa. To build this
+table, the Toy MC calls the :py:meth:`EventType.labels` method from the
+corresponding event type. This method gives a dict that associates a
+string label (should be only alphanumerics + underscore) to the lookup
+number for each event subtype. The labels for the built-in event type
+subtypes are built up from the instance's ``name`` attribute, and any
+custom EventType classes you define should do the same.
+
+.. note:: If the name you give when you construct a new EventType
+   object is not a valid Python variable name (e.g. if it has a space in
+   it), then you will not be able to use the PyROOT shortcut of accessing
+   the corresponding TBranch using ``my_tree.branch_name``. You will
+   still be able to access the TBranch in C++ and in Python using the
+   ``SetBranchAddress`` pattern. This isn't a huge problem because I
+   anticipate most usage of MCTruthLookup will be via
+   ``MCTruthLookup->Show(0)`` in the interactive ROOT prompt.
+
+The lookup table is implemented as the list of TBranches on the TTree.
+So for example, if, as before, ``my_event.first_subclass_label = 5``,
+and the associated text label is ``'first_event_type'``,
+then there will be a TBranch with name ``5`` that will be assigned a
+C string value of ``"first_event_type"``, and also a TBranch with name
+``"first_event_type"`` that will be assigned an ``unsigned int`` value
+of 5. This TTree will only have 1 "entry" since the variety of events
+are encoded in the TBranches rather than the entries.
+
+Here's an example output showing an MCTruthLookup table. The named
+TBranches are sorted alphabetically, and the numbered ones are sorted
+numerically::
+
+    root [1] MCTruthLookup->Show(0)
+    ======> EVENT:0
+     IBD_nGd_delayed = 2
+     IBD_nGd_prompt  = 1
+     Single_event    = 0
+     _0              = Single_event
+     _1              = IBD_nGd_prompt
+     _2              = IBD_nGd_delayed
+
 Customizing the random generators
 ---------------------------------
 
@@ -143,6 +219,7 @@ from collections import namedtuple
 from operator import attrgetter
 from abc import ABC, abstractmethod
 from numpy.random import default_rng
+import numpy as np
 
 import root_util
 
@@ -198,7 +275,7 @@ class ToyMC:
     def run(self):
         """Run the ToyMC and save the output."""
         output = MCOutput(
-            self.outfile, reco_name=self.reco_name, calib_name=self.calib_name
+            self.outfile, self.reco_name, self.calib_name, self.event_types,
         )
         events = []
         for event_type in self.event_types:
@@ -221,6 +298,9 @@ class MCOutput:
     This class is used internally to prepare and fill the output ROOT
     TTrees.
 
+    The required ``event_types`` parameter is necessary to generate the
+    MC Truth lookup TTree.
+
     Parameters
     ----------
     container : ROOT.TFile
@@ -229,9 +309,11 @@ class MCOutput:
         The name of the reconstructed data TTree
     calib_name : str
         The name of the calibrated statistics TTree
+    event_types : list of :py:class:`EventType`
+        The list of EventType objects to add to the lookup table
     """
 
-    def __init__(self, container, reco_name, calib_name):
+    def __init__(self, container, reco_name, calib_name, event_types):
         from ROOT import TTree  # pylint: disable=no-name-in-module
 
         self.container = container
@@ -241,6 +323,10 @@ class MCOutput:
         )
         self.calib_ttree, self.calib_buf = self.prep_calib(
             TTree, self.container, calib_name
+        )
+        self.truth_ttree, self.truth_buf = self.prep_truth(TTree, self.container)
+        self.truth_lookup_ttree, _ = self.prep_truth_lookup(
+            TTree, self.container, event_types
         )
 
     def add(self, event):
@@ -275,8 +361,11 @@ class MCOutput:
         assign_value(rb.y, event.y)
         assign_value(rb.z, event.z)
 
+        assign_value(self.truth_buf.truth_label, event.truth_label)
+
         self.reco_ttree.Fill()
         self.calib_ttree.Fill()
+        self.truth_ttree.Fill()
 
     @staticmethod
     def prep_calib(TTree, host_file, name):
@@ -382,6 +471,102 @@ class MCOutput:
         reco.Branch("z", buf.z, "z/F")
         return reco, buf
 
+    @staticmethod
+    def prep_truth(TTree, host_file):
+        """Create the MC Truth TTree (named MCTruth) and fill buffer.
+
+        Parameters
+        ----------
+        host_file : ROOT.TFile
+            The TFile that will hold the MC Truth TTree
+
+        Returns
+        -------
+        (mc_truth_ttree, buffer) : tuple
+            The TTree object and the buffer used to fill its TBranches
+        """
+        buf = root_util.TreeBuffer()
+        buf.truth_label = root_util.unsigned_int_value()
+        host_file.cd()
+        name = "MCTruth"
+        long_name = "Monte Carlo Truth information for each entry"
+        mc_truth = TTree(name, long_name)
+        mc_truth.Branch("truth_label", buf.truth_label, "truth_label/i")
+        return mc_truth, buf
+
+    @staticmethod
+    def prep_truth_lookup(TTree, host_file, event_types):
+        """Create the MC Truth Lookup TTree (named MCTruthLookup) and fill buffer.
+
+        Each TBranch has a name which is either an integer, in which
+        case the value on that TBranch is an array of chars describing
+        the event subtype represented by that integer, or the converse:
+        a subtype name with an integer value. This way the expression
+        ``MCTruthLookup->Show(0)`` will print out both directions of
+        lookup.
+
+        Parameters
+        ----------
+        host_file : ROOT.TFile
+            The TFile that will hold the MC Truth Lookup TTree
+        event_types : list of :py:class:`EventType`
+            The list of EventType objects to add to the lookup table
+
+
+        Returns
+        -------
+        (mc_truth_lookup ttree, buffer) : tuple
+            The TTree object and the buffer used to fill its TBranches
+        """
+        labels_by_number = []
+        numbers_by_label = []
+        for event_type in event_types:
+            event_labels = event_type.labels()
+            for number, label in event_labels.items():
+                if number is None or number < 0 or not isinstance(number, int):
+                    raise InvalidLookupError(event_type.name, label, number)
+                numbers_by_label.append((label, number))
+                labels_by_number.append((number, label))
+        numbers_by_label.sort()
+        labels_by_number.sort()
+        max_label_length = max(len(x[0]) for x in numbers_by_label)
+        buf_size = max_label_length + 1
+
+        buf = root_util.TreeBuffer()
+
+        def new_singleton_array(value):
+            """Return a simple singleton array with value of type
+            char*.
+
+            There's no root-util function for char arrays so I'm making my
+            own here. Further, python's built-in array.arrays are super
+            inconvenient for bytestrings/char arrays so I'm using
+            numpy.array instead. The "S{}" typecode means null-terminated
+            bytes array with max length of buf_size.
+            """
+            type_format = "S{}".format(buf_size)
+            return np.array([value], type_format)
+
+        # Create and initialize the TreeBuffer buffers to the only
+        # values they'll ever take
+        for label, number in numbers_by_label:
+            setattr(buf, label, root_util.unsigned_int_value())
+            root_util.assign_value(getattr(buf, label), number)
+        for number, label in labels_by_number:
+            setattr(buf, "_{}".format(number), new_singleton_array(label))
+
+        host_file.cd()
+        name = "MCTruthLookup"
+        long_name = "Monte Carlo Truth lookup table"
+        mc_truth = TTree(name, long_name)
+        for label, number in numbers_by_label:
+            mc_truth.Branch(label, getattr(buf, label), "{}/i".format(label))
+        for number, label in labels_by_number:
+            name = "_{}".format(number)
+            mc_truth.Branch(name, getattr(buf, name), "{}[{}]/C".format(name, buf_size))
+        mc_truth.Fill()
+        return mc_truth, buf
+
 
 class EventType(ABC):
     """The base class for different event types.
@@ -392,7 +577,10 @@ class EventType(ABC):
     Parameters
     ----------
     name : str
-        The human-readable name for this event type
+        The human-readable name for this event type. For ease of use
+        in MC truth label names, this name should be a valid Python
+        variable name (only alphanumerics and underscore, not starting
+        with a number).
     """
 
     def __init__(self, name):
@@ -431,6 +619,27 @@ class EventType(ABC):
         """
         return []
 
+    @abstractmethod
+    def labels(self):
+        """Return a dict containing the truth labels for this event
+        type.
+
+        The keys are the positive integer labels, and the values are
+        the text labels corresponding to the integer keys.
+        The text labels should be kept short (less
+        than 20 characters) and should ideally be valid Python variable
+        names to facilitate use as a TBranch in PyROOT. This means they
+        should only consist of letters, numbers, and underscores, and
+        should not start with a number.
+
+        Returns
+        -------
+        labels : dict
+            The dict mapping bytes labels to integer values as described
+            above.
+        """
+        return {}
+
     @staticmethod
     def actual_event_count(rng, duration_s, rate_hz):
         """Generate an actual event count given the rate and duration.
@@ -460,6 +669,7 @@ class EventType(ABC):
 Event = namedtuple(
     "Event",
     [
+        "truth_index",
         "trigger_number",
         "timestamp",
         "detector",
@@ -488,6 +698,13 @@ when constructing a new :py:class:`Event` object, you must provide
 **all** of the arguments **in the right order**. The order is shown in
 the call signature above. Each field's documentation also includes the
 (0-based) index corresponding to the correct order.
+"""
+Event.truth_index.__doc__ += """
+
+The MC Truth index identifying the type of event. The index for each
+event is stored in a special TTree whose entries line up with the data
+TTrees. The lookup/meaning for each index is stored in its own special
+TTree.
 """
 Event.trigger_number.__doc__ += """
 
@@ -574,3 +791,31 @@ Event.f2inch_maxQ.__doc__ += """
 The 2-inch PMT maximum charge value for the event. Will be inserted into
 the ``MaxQ_2inchPMT`` TBranch.
 """
+
+
+class InvalidLookupError(Exception):
+    """Raised when an invalid subevent lookup number is encountered.
+
+    Attributes
+    ----------
+    obj_name : str
+        The name of the EventType object that this label was a part of
+    label_name : str
+        The subevent label that should have been numbered
+    supplied_number : str
+        The invalid supplied lookup number
+    """
+
+    def __init__(self, obj_name, label_name, supplied_number):
+        self.obj_name = obj_name
+        self.label_name = label_name
+        self.supplied_number = supplied_number
+        super().__init__(repr(self))
+
+    def __repr__(self):
+        return "{}(obj_name={}, label_name={}, supplied_number={})".format(
+            self.__class__.__qualname__,
+            repr(self.obj_name),
+            repr(self.label_name),
+            repr(self.supplied_number),
+        )

@@ -663,7 +663,7 @@ class EventType(ABC):
             The actual count of events to use, sampled at random
         """
         expected_count = duration_s * rate_hz
-        return rng.poisson(expected_count)
+        return expected_count
 
 
 Event = namedtuple(

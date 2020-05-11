@@ -644,14 +644,20 @@ class EventType(ABC):
     def actual_event_count(rng, duration_s, rate_hz):
         """Generate an actual event count given the rate and duration.
 
-        This is a helper method that samples the Poisson distribution
-        with a mean representing the number of "expected" events given
-        the rate and duration/runtime. Note that for correlated events,
-        this is more accurately the number of event "groups" rather than
-        the number of sub-events.
+        This is a helper method that simply multiplies the duration
+        by the rate to get the total number of events. Note that for
+        correlated events, this is more accurately the number of event
+        "groups" rather than the number of sub-events.
+
+        You can override this method for a particular subclass if you
+        want different behavior.
 
         Parameters
         ----------
+        rng : numpy.random.Generator
+            The random number generator to use. Note: this is not used
+            in the parent class implementation but you can use it in a
+            subclass if you want.
         duration_s : number
             The length of time the DAQ is being run, **in seconds**
         rate_hz : number
@@ -660,7 +666,7 @@ class EventType(ABC):
         Returns
         -------
         number
-            The actual count of events to use, sampled at random
+            The actual count of events to use
         """
         expected_count = duration_s * rate_hz
         return expected_count

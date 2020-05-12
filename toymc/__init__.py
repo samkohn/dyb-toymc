@@ -206,9 +206,9 @@ first parameter. In the built-in event types, most of the logic is
 specified in sub-methods to help keep the code clean and readable.
 
 Each event you create (i.e. each element of the list returned by
-``generate_events`` must be an instance of :py:class:`toymc.Event`,
+``generate_events``) must be an instance of :py:class:`toymc.Event`,
 which is a ``namedtuple`` class. When you construct these Event objects,
-you must provide all 16 attributes in the correct order. They are
+you must provide all attributes in the correct order. They are
 also immutable, so you cannot change values from an existing Event
 object. You shouldn't have to, though, if you follow the pattern for
 generating events from the built-in event types. See the :py:class:`API

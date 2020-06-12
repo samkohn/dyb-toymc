@@ -361,7 +361,7 @@ class MCOutput:
         assign_value(rb.y, event.y)
         assign_value(rb.z, event.z)
 
-        assign_value(self.truth_buf.truth_label, event.truth_label)
+        assign_value(self.truth_buf.truth_index, event.truth_index)
 
         self.reco_ttree.Fill()
         self.calib_ttree.Fill()
@@ -486,12 +486,12 @@ class MCOutput:
             The TTree object and the buffer used to fill its TBranches
         """
         buf = root_util.TreeBuffer()
-        buf.truth_label = root_util.unsigned_int_value()
+        buf.truth_index = root_util.unsigned_int_value()
         host_file.cd()
         name = "MCTruth"
         long_name = "Monte Carlo Truth information for each entry"
         mc_truth = TTree(name, long_name)
-        mc_truth.Branch("truth_label", buf.truth_label, "truth_label/i")
+        mc_truth.Branch("truth_index", buf.truth_index, "truth_index/i")
         return mc_truth, buf
 
     @staticmethod

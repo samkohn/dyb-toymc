@@ -668,7 +668,7 @@ class EventType(ABC):
         number
             The actual count of events to use
         """
-        expected_count = duration_s * rate_hz
+        expected_count = int(duration_s * rate_hz)
         return expected_count
 
 

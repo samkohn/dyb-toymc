@@ -7,9 +7,10 @@ ADs.
 
 There is only one event subtype attribute representing the label given
 to TTree entries produced by an instance of this class:
-    - text label: the name provided to this class in the constructor
-    - numeric lookup: the value of ``self.truth_label``, which you must
-      assign
+
+- text label: the name provided to this class in the constructor
+- numeric lookup: the value of ``self.truth_label``, which you must
+  assign
 
 As specified in the API below, there are user-configurable options
 for this event type. The simplest, barely worth mentioning, is the

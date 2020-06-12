@@ -9,10 +9,11 @@ of displacement from the prompt event.
 
 There are 2 ``MCTruthLookup`` labels for Correlated events: one for the
 prompt and one for the delayed:
-    - text labels: append ``"_prompt"`` and ``"_delayed"`` to the name
-      provided to this class in the constructor
-    - numeric lookup: the value of ``self.truth_label_prompt`` and
-      ``self.truth_label_delayed``, respectively
+
+- text labels: append ``"_prompt"`` and ``"_delayed"`` to the name
+  provided to this class in the constructor
+- numeric lookup: the value of ``self.truth_label_prompt`` and
+  ``self.truth_label_delayed``, respectively
 
 The user-configurable options specified below include, as usual,
 :py:attr:`~Correlated.trigger_type` and then some interesting ones.

@@ -11,12 +11,13 @@ the IWS, or allowing for AD muons that don't have a correlated WP hit).
 There are 3 event subtype attributes for Muon objects that you must
 specify in order to use the MC Truth lookups. They're all based on the
 name given to the constructor.
-    - WP events: text label is ``self.name + "_WP"``, numeric lookup
-      is the value of ``self.truth_label_WP``
-    - AD muon events: text label is ``self.name + "_AD"``, numeric
-      lookup is the value of ``self.truth_label_AD``
-    - Shower muon events: text label is ``self.name + "_shower"``,
-      numeric lookup is the value of ``self.truth_label_shower``
+
+- WP events: text label is ``self.name + "_WP"``, numeric lookup
+  is the value of ``self.truth_label_WP``
+- AD muon events: text label is ``self.name + "_AD"``, numeric
+  lookup is the value of ``self.truth_label_AD``
+- Shower muon events: text label is ``self.name + "_shower"``,
+  numeric lookup is the value of ``self.truth_label_shower``
 
 There are a much larger number of configurables for this event type due
 to the complexity of the situation being modeled. Of course there is

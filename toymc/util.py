@@ -150,8 +150,10 @@ def rng_correlated_expo_cylinder(radius, height, exp_scale):
 
         def trial():
             displacement = rng.exponential(exp_scale, size=2)
-            x = start_position[0] + displacement[0]
-            y = start_position[1] + displacement[1]
+            sign_on_x = rng.choice([1, -1])
+            sign_on_y = rng.choice([1, -1])
+            x = start_position[0] + sign_on_x * displacement[0]
+            y = start_position[1] + sign_on_y * displacement[1]
             return (x, y)
 
         x, y = within_circle(radius, trial)
@@ -159,7 +161,8 @@ def rng_correlated_expo_cylinder(radius, height, exp_scale):
         def z_trial_trick():
             # To iterate on the z coordinate, just return (z, 0)
             displacement = rng.exponential(exp_scale)
-            z = start_position[2] + displacement
+            sign_on_z = rng.choice([1, -1])
+            z = start_position[2] + sign_on_z * displacement
             return (z, 0)
 
         z, _ = within_circle(height / 2, z_trial_trick)

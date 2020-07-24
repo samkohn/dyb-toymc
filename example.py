@@ -8,9 +8,9 @@ from toymc.muon import Muon
 from toymc import ToyMC
 
 
-def main(outfile, runtime, seed):
+def main(outfile, runtime, t0, seed):
     """Run the ToyMC with the given configuration."""
-    toymc = ToyMC(outfile, runtime, seed=seed)
+    toymc = ToyMC(outfile, runtime, t0, seed=seed)
     # Single(name, rate_Hz, EH, AD)
     single = Single("Single_event", 20, 1, 1)
     single.truth_label = 0
@@ -41,6 +41,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Daya Bay Toy MC by Sam Kohn")
     parser.add_argument("outfile")
     parser.add_argument("-t", "--runtime", type=int, help="DAQ runtime in seconds")
+    parser.add_argument("--t0", type=int, help="Start time of run in seconds")
     parser.add_argument("-s", "--seed", default=None, type=int, help="random seed")
     args = parser.parse_args()
-    main(args.outfile, args.runtime, args.seed)
+    main(args.outfile, args.runtime, args.t0, args.seed)

@@ -236,6 +236,8 @@ class ToyMC:
         The file name/location for the output ROOT file
     duration : number
         The duration of data taking to generate data for, **in seconds**
+    t0 : integer
+        The timestamp offset from t=0, setting the "start time" of the run
 
     Keyword Arguments
     -----------------
@@ -255,6 +257,7 @@ class ToyMC:
         self,
         outfile,
         duration,
+        t0=0,
         reco_name="AdSimpleNL",
         calib_name="CalibStats",
         seed=None,
@@ -264,6 +267,7 @@ class ToyMC:
         self.outfile = TFile(outfile, "RECREATE")
         self.event_types = []
         self.duration = duration
+        self.t0 = t0
         self.rng = default_rng(seed)
         self.reco_name = reco_name
         self.calib_name = calib_name
@@ -279,7 +283,8 @@ class ToyMC:
         )
         events = []
         for event_type in self.event_types:
-            new_events = event_type.generate_events(self.rng, self.duration)
+            new_events = event_type.generate_events(self.rng, self.duration,
+                    self.t0)
             events.extend(new_events)
         events.sort(key=attrgetter("timestamp"))
         for event in events:
@@ -587,7 +592,7 @@ class EventType(ABC):
         self.name = name
 
     @abstractmethod
-    def generate_events(self, rng, duration_s):
+    def generate_events(self, rng, duration_s, t0_s):
         """Generate a list of :py:class:`Event` objects for the given
         duration.
 
@@ -597,7 +602,7 @@ class EventType(ABC):
         This method should be overridden by any subclasses. The
         overriding method should use the ``rng`` parameter for any
         randomness that is needed, and should generate events between
-        ``t=0`` and ``t=duration_s`` (**in seconds**). The events do not
+        ``t=t0_s`` and ``t=t0+duration_s`` (**in seconds**). The events do not
         need to be sorted or in any particular order. Note that this
         method does not specify the *number* of events to generate. That
         is assumed to be a potentially configurable value or one that
@@ -611,6 +616,9 @@ class EventType(ABC):
         duration_s : number
             The length of simulated DAQ time that the events should be
             generated within, **in seconds**
+        t0_s : number
+            The timestamp offset from t=0, so that events are between t0_s and
+            t0_s + duration_s
 
         Returns
         -------

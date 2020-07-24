@@ -110,7 +110,7 @@ class Muon(toymc.EventType):
         self.ADMuon_energy_spectrum = lambda rng: rng.uniform(20, 2000)
         self.shower_energy_spectrum = lambda rng: rng.uniform(2500, 5000)
 
-    def generate_events(self, rng, duration_s):
+    def generate_events(self, rng, duration_s, t0_s):
         """Generate muon events over the given duration.
 
         This is an internal function and is not intended to be called
@@ -120,7 +120,9 @@ class Muon(toymc.EventType):
         number_admuons = int(actual_number * self.prob_WP_and_AD)
         number_showermuons = int(actual_number * self.prob_WP_and_shower)
         duration_ns = int(1e9) * duration_s
-        times_WP = rng.integers(0, duration_ns, size=actual_number)
+        start_ns = int(1e9) * t0_s
+        end_ns = start_ns + duration_ns
+        times_WP = rng.integers(start_ns, end_ns, size=actual_number)
         ad_delay = 50
         events = []
         # First generate all WP events:

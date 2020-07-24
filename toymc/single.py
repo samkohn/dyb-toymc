@@ -84,7 +84,7 @@ class Single(toymc.EventType):
         )
         self.truth_label = None
 
-    def generate_events(self, rng, duration_s):
+    def generate_events(self, rng, duration_s, t0_s):
         """Generate single uncorrelated events over the given duration.
 
         This is an internal function and is not intended to be called
@@ -92,8 +92,10 @@ class Single(toymc.EventType):
         """
         actual_number = self.actual_event_count(rng, duration_s, self.rate_hz)
         duration_ns = int(1e9) * duration_s
+        start_ns = int(1e9) * t0_s
+        end_ns = start_ns + duration_ns
         events = []
-        timestamps = rng.integers(0, duration_ns, size=actual_number)
+        timestamps = rng.integers(start_ns, end_ns, size=actual_number)
         for timestamp in timestamps:
             event = self.new_event(rng, timestamp)
             events.append(event)
